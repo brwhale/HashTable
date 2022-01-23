@@ -27,7 +27,7 @@ int main() {
     // disbale scientific notation
     std::cout << std::fixed;
 
-    std::vector<int> values(100000, 0);
+    std::vector<int> values(1000000, 0);
     std::vector<std::string> valueStrings;
     valueStrings.reserve(values.size());
     std::map<size_t, size_t> mmap;
@@ -40,7 +40,7 @@ int main() {
     // generate values
     auto startTime = GetTimeStamp();
     for (auto& val : values) {
-        val = rand() & 100000;
+        val = rand() % 1000000;
     }
     auto EndTime = GetTimeStamp();
     std::cout << "time to fill vector:\t\t\t\t\t" << GetSeconds(startTime, EndTime) << "\n";
@@ -156,7 +156,7 @@ int main() {
         cmapSum += cmap_string[valueStrings[i]];
     }
     EndTime = GetTimeStamp();
-    std::cout << "time to sum (" << cmapSum << ") custom string key map:\t\t" << GetSeconds(startTime, EndTime) << " with " << cmap_string.bucket_count() << " buckets\n";
+    std::cout << "time to sum (" << cmapSum << ") custom string key map:\t" << GetSeconds(startTime, EndTime) << " with " << cmap_string.bucket_count() << " buckets\n";
 
     return 0;
 }

@@ -1,20 +1,25 @@
 #include <string>
 #include <vector>
 #include <memory>
+
 // define our hashing
 size_t MurmurHash(const void * key, int len);
+
 template <typename T>
 inline size_t hash(const T& t) {
 	return MurmurHash(&t, sizeof(T));
 }
+
 template <typename T>
 inline size_t hash(const std::vector<T>& t) {
 	return MurmurHash(t.data(), static_cast<int>(t.size() * sizeof(T)));
 }
+
 template <>
 inline size_t hash(const size_t& t) {
 	return t;
 }
+
 template <>
 inline size_t hash(const std::string& t) {
 	return MurmurHash(t.data(), static_cast<int>(t.size()));
@@ -24,8 +29,10 @@ inline size_t hash(const std::string& t) {
 template<typename H, typename T>
 class HashTable {
     // Tune for performance
-    static constexpr size_t bucketGrowthRatio = 16;
-    static constexpr size_t bucketSize = 2;
+    // lower values reduce memory footprint at the cost of write speed
+    static constexpr size_t bucketGrowthRatio = 7;
+    // higher values reduce memory footprint at the cost of read and write speed
+    static constexpr size_t bucketSize = 1;
 
     size_t bucketCount = 16;
 
@@ -59,6 +66,7 @@ class HashTable {
                 (*new_buckets)[getBucketIndex(it.hash)].items.push_back(it);
             }
         }
+
         buckets = BucketListPtr(new_buckets);
     }
 
@@ -80,6 +88,7 @@ public:
         }
 
         rebalance();
+
         bucket& newbucket = (*buckets)[getBucketIndex(index)];
         newbucket.items.push_back(item{index, T()});
         return newbucket.items.back().value;
