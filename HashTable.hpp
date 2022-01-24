@@ -9,13 +9,13 @@
 template<typename K, typename T, typename H = std::hash<K>>
 class HashTable {
     // Tune for performance
-    static constexpr size_t bucketGrowthRatio = 5;
+    static constexpr size_t bucketGrowthRatio = 4; // must be pow of 2
     static constexpr size_t bucketSize = 16;
     size_t itemCount = 0;
     size_t bucketCount = 8;
 
     size_t getBucketIndex(size_t hash) {
-        return hash % bucketCount;
+        return hash & (bucketCount-1);
     }
 
     struct item {
@@ -69,26 +69,30 @@ public:
     
     T& operator[](K indexer){
         size_t index = H{}(indexer);
-        bucket& buck = (*buckets)[getBucketIndex(index)];
-        for (item& it : buck) {
+        bucket* buck = &(*buckets)[getBucketIndex(index)];
+        for (item& it : *buck) {
             if (it.hash == index) {
                 return it.value;
             }
         }
         
         while(1) {
-            bucket& newbucket = (*buckets)[getBucketIndex(index)];
-            if (newbucket.size() < bucketSize) {
+            if (buck->size() < bucketSize) {
                 ++itemCount;
-                newbucket.push_back(item{index, T()});
-                return newbucket.back().value;
+                buck->push_back(item{index, T()});
+                return buck->back().value;
             } else {
                 rebalance();
+                buck = &(*buckets)[getBucketIndex(index)];
             }
         }
     }
 
     size_t bucket_count() {
         return bucketCount;
+    }
+
+    void clear() {
+        buckets->clear();
     }
 };
