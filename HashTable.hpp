@@ -1,40 +1,21 @@
+#pragma once
+
 #include <string>
 #include <vector>
 #include <memory>
-
-// define our hashing
-size_t MurmurHash(const void * key, int len);
-
-template <typename T>
-inline size_t hash(const T& t) {
-	return MurmurHash(&t, sizeof(T));
-}
-
-template <typename T>
-inline size_t hash(const std::vector<T>& t) {
-	return MurmurHash(t.data(), static_cast<int>(t.size() * sizeof(T)));
-}
-
-template <>
-inline size_t hash(const size_t& t) {
-	return t;
-}
-
-template <>
-inline size_t hash(const std::string& t) {
-	return MurmurHash(t.data(), static_cast<int>(t.size()));
-}
+#include <functional>
 
 // simplest hash table implementation I could think of
-template<typename H, typename T>
+template<typename K, typename T, typename H = std::hash<K>>
 class HashTable {
     // Tune for performance
-    // lower values reduce memory footprint at the cost of write speed
-    static constexpr size_t bucketGrowthRatio = 7;
-    // higher values reduce memory footprint at the cost of read and write speed
-    static constexpr size_t bucketSize = 1;
-
-    size_t bucketCount = 16;
+    static constexpr size_t bucketGrowthRatio = 5;
+    static constexpr size_t bucketSize = 3;
+    static constexpr double minimumFillBeforeRebalance = .95;
+    size_t itemCount = 0;
+    size_t bucketCount = 4;
+    size_t usedBucketCount = 0;
+    double inverseBucketCount = 1/static_cast<double>(bucketCount);
 
     size_t getBucketIndex(size_t hash) {
         return hash % bucketCount;
@@ -58,12 +39,18 @@ class HashTable {
     BucketListPtr buckets;
 
     void rebalance() {
+        usedBucketCount = 0;
         bucketCount *= bucketGrowthRatio;
+        inverseBucketCount = 1/static_cast<double>(bucketCount);
         auto new_buckets = new BucketList(bucketCount);
   
         for (auto& buck : *buckets) {
             for (auto& it : buck.items) {
-                (*new_buckets)[getBucketIndex(it.hash)].items.push_back(it);
+                auto& its = (*new_buckets)[getBucketIndex(it.hash)].items;
+                if (its.size() == 0) {
+                    ++usedBucketCount;
+                }
+                its.push_back(it);
             }
         }
 
@@ -73,8 +60,8 @@ class HashTable {
 public:
     HashTable() : buckets(BucketListPtr(new BucketList(bucketCount))) {}
     
-    T& operator[](H indexer){
-        size_t index = hash(indexer);
+    T& operator[](K indexer){
+        size_t index = H{}(indexer);
         bucket& buck = (*buckets)[getBucketIndex(index)];
         for (item& it : buck.items) {
             if (it.hash == index) {
@@ -82,7 +69,12 @@ public:
             }
         }
         
-        if (buck.items.size() < bucketSize) {
+        if (buck.items.size() < bucketSize || 
+            (usedBucketCount * inverseBucketCount) < minimumFillBeforeRebalance ) {
+            ++itemCount;
+            if (buck.items.size() == 0){
+                ++usedBucketCount;
+            }
             buck.items.push_back(item{index, T()});
             return buck.items.back().value;
         }
@@ -90,6 +82,10 @@ public:
         rebalance();
 
         bucket& newbucket = (*buckets)[getBucketIndex(index)];
+        ++itemCount;
+        if (newbucket.items.size() == 0){
+            ++usedBucketCount;
+        }
         newbucket.items.push_back(item{index, T()});
         return newbucket.items.back().value;
     }
