@@ -31,7 +31,7 @@ int main(int argc, const char** argv) {
     int sampleSize = 1000000;
 
     if (argc == 2) {
-        std::cout << argv[1] << "\n";
+        std::cout << "Sample size: " << argv[1] << "\n";
         sampleSize = atoi(argv[1]);
     }
 

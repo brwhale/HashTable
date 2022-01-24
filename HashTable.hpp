@@ -9,7 +9,7 @@
 template<typename K, typename T, typename H = std::hash<K>>
 class HashTable {
     // Tune for performance
-    static constexpr size_t bucketGrowthRatio = 3;
+    static constexpr size_t bucketGrowthRatio = 5;
     static constexpr size_t bucketSize = 16;
     size_t itemCount = 0;
     size_t bucketCount = 8;
