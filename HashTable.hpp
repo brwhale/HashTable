@@ -28,9 +28,6 @@ class HashTable {
         int count = 0;
     public:
         void push_back(const item& it) {
-            if (count >= bucketSize) {
-                std::cout << "errrrr\n";
-            }
             items[count] = it;
             ++count;
         }
