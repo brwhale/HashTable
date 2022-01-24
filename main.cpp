@@ -21,14 +21,21 @@ double GetSeconds(timePoint A, timePoint B) {
 	return d.count();
 }
 
-int main() {
+int main(int argc, const char** argv) {
     // set consistent random seed
     srand(10);
 
     // disbale scientific notation
     std::cout << std::fixed;
 
-    std::vector<int> values(1000000, 0);
+    int sampleSize = 1000000;
+
+    if (argc == 2) {
+        std::cout << argv[1] << "\n";
+        sampleSize = atoi(argv[1]);
+    }
+
+    std::vector<int> values(sampleSize, 0);
     std::vector<std::string> valueStrings;
     valueStrings.reserve(values.size());
     std::map<size_t, size_t> mmap;
@@ -60,6 +67,7 @@ int main() {
         umap[values[i]] = i;
     }
     EndTime = GetTimeStamp();
+    auto umapFillTime = GetSeconds(startTime, EndTime);
     std::cout << "time to fill std unordered map:\t\t\t\t" << GetSeconds(startTime, EndTime) << "\n";
 
     startTime = GetTimeStamp();
@@ -67,6 +75,7 @@ int main() {
         cmap[values[i]] = i;
     }
     EndTime = GetTimeStamp();
+    auto cmapFillTime = GetSeconds(startTime, EndTime);
     std::cout << "time to fill hashtable:\t\t\t\t\t" << GetSeconds(startTime, EndTime) << "\n";
 
     startTime = GetTimeStamp();
@@ -74,6 +83,7 @@ int main() {
         cmap_murmur[values[i]] = i;
     }
     EndTime = GetTimeStamp();
+    auto cmmapFillTime = GetSeconds(startTime, EndTime);
     std::cout << "time to fill hashtable (mhash):\t\t\t\t" << GetSeconds(startTime, EndTime) << "\n\n";
 
 
@@ -97,6 +107,7 @@ int main() {
         umap_string[valueStrings[i]] = i;
     }
     EndTime = GetTimeStamp();
+    auto umapStringFillTime = GetSeconds(startTime, EndTime);
     std::cout << "time to fill std unordered string map:\t\t\t" << GetSeconds(startTime, EndTime) << "\n";
 
     startTime = GetTimeStamp();
@@ -104,6 +115,7 @@ int main() {
         cmap_string[valueStrings[i]] = i;
     }
     EndTime = GetTimeStamp();
+    auto cmapStringFillTime = GetSeconds(startTime, EndTime);
     std::cout << "time to fill string hashtable:\t\t\t\t" << GetSeconds(startTime, EndTime) << "\n";
 
     startTime = GetTimeStamp();
@@ -111,6 +123,7 @@ int main() {
         cmap_string_murmur[valueStrings[i]] = i;
     }
     EndTime = GetTimeStamp();
+    auto cmmapStringFillTime = GetSeconds(startTime, EndTime);
     std::cout << "time to fill string hashtable (mhash):\t\t\t" << GetSeconds(startTime, EndTime) << "\n\n";
 
 
@@ -137,6 +150,7 @@ int main() {
         mapSum += umap[values[i]];
     }
     EndTime = GetTimeStamp();
+    auto umapSumTime = GetSeconds(startTime, EndTime);
     std::cout << "time to sum (" << mapSum << ") std unordered map:\t\t" << GetSeconds(startTime, EndTime) << " with " << umap.bucket_count() << " buckets\n";
 
     size_t cmapSum = 0;
@@ -145,6 +159,7 @@ int main() {
         cmapSum += cmap[values[i]];
     }
     EndTime = GetTimeStamp();
+    auto cmapSumTime = GetSeconds(startTime, EndTime);
     std::cout << "time to sum (" << cmapSum << ") hashtable:\t\t\t" << GetSeconds(startTime, EndTime) << " with " << cmap.bucket_count() << " buckets\n";
 
     cmapSum = 0;
@@ -153,6 +168,7 @@ int main() {
         cmapSum += cmap_murmur[values[i]];
     }
     EndTime = GetTimeStamp();
+    auto cmmapSumTime = GetSeconds(startTime, EndTime);
     std::cout << "time to sum (" << cmapSum << ") hashtable (mhash):\t\t" << GetSeconds(startTime, EndTime) << " with " << cmap_murmur.bucket_count() << " buckets\n\n";
 
 
@@ -179,6 +195,7 @@ int main() {
         mapSum += umap_string[valueStrings[i]];
     }
     EndTime = GetTimeStamp();
+    auto umapStringSumTime = GetSeconds(startTime, EndTime);
     std::cout << "time to sum (" << mapSum << ") std unordered string map:\t" << GetSeconds(startTime, EndTime) << " with " << umap_string.bucket_count() << " buckets\n";
 
     cmapSum = 0;
@@ -187,6 +204,7 @@ int main() {
         cmapSum += cmap_string[valueStrings[i]];
     }
     EndTime = GetTimeStamp();
+    auto cmapStringSumTime = GetSeconds(startTime, EndTime);
     std::cout << "time to sum (" << cmapSum << ") string hashtable:\t\t" << GetSeconds(startTime, EndTime) << " with " << cmap_string.bucket_count() << " buckets\n";
 
     cmapSum = 0;
@@ -195,7 +213,14 @@ int main() {
         cmapSum += cmap_string_murmur[valueStrings[i]];
     }
     EndTime = GetTimeStamp();
+    auto cmmapStringSumTime = GetSeconds(startTime, EndTime);
     std::cout << "time to sum (" << cmapSum << ") string hashtable (mhash):\t" << GetSeconds(startTime, EndTime) << " with " << cmap_string_murmur.bucket_count() << " buckets\n\n";
 
+    auto totalUMapTime = umapFillTime + umapStringFillTime + umapSumTime + umapStringSumTime;
+    auto totalCMapTime = cmapFillTime + cmapStringFillTime + cmapSumTime + cmapStringSumTime;
+    auto totalCMMapTime = cmmapFillTime + cmmapStringFillTime + cmmapSumTime + cmmapStringSumTime;
+    std::cout << "Total std::unordered_map time: " << totalUMapTime << "\n";
+    std::cout << "Total HashTable time: " << totalCMapTime << ", fraction of std: " << totalCMapTime/totalUMapTime << "\n";
+    std::cout << "Total HashTable(mhash) time: " << totalCMMapTime << ", fraction of std: " << totalCMMapTime/totalUMapTime << "\n";
     return 0;
 }

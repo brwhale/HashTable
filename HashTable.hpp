@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <vector>
+#include <array>
 #include <memory>
 #include <functional>
 
@@ -9,13 +9,10 @@
 template<typename K, typename T, typename H = std::hash<K>>
 class HashTable {
     // Tune for performance
-    static constexpr size_t bucketGrowthRatio = 5;
-    static constexpr size_t bucketSize = 3;
-    static constexpr double minimumFillBeforeRebalance = .95;
+    static constexpr size_t bucketGrowthRatio = 3;
+    static constexpr size_t bucketSize = 16;
     size_t itemCount = 0;
-    size_t bucketCount = 4;
-    size_t usedBucketCount = 0;
-    double inverseBucketCount = 1/static_cast<double>(bucketCount);
+    size_t bucketCount = 8;
 
     size_t getBucketIndex(size_t hash) {
         return hash % bucketCount;
@@ -26,10 +23,28 @@ class HashTable {
         T value;
     };
 
-    struct bucket {
-        std::vector<item> items;
-        bucket() {
-            items.reserve(bucketSize);
+    class bucket {
+        std::array<item, bucketSize> items;
+        int count = 0;
+    public:
+        void push_back(const item& it) {
+            if (count >= bucketSize) {
+                std::cout << "errrrr\n";
+            }
+            items[count] = it;
+            ++count;
+        }
+        int size() {
+            return count;
+        }
+        item* begin() {
+            return &items[0];
+        }
+        item* end() {
+            return &items[count];
+        }
+        item& back() {
+            return items[count-1];
         }
     };
 
@@ -39,17 +54,12 @@ class HashTable {
     BucketListPtr buckets;
 
     void rebalance() {
-        usedBucketCount = 0;
         bucketCount *= bucketGrowthRatio;
-        inverseBucketCount = 1/static_cast<double>(bucketCount);
         auto new_buckets = new BucketList(bucketCount);
   
         for (auto& buck : *buckets) {
-            for (auto& it : buck.items) {
-                auto& its = (*new_buckets)[getBucketIndex(it.hash)].items;
-                if (its.size() == 0) {
-                    ++usedBucketCount;
-                }
+            for (auto& it : buck) {
+                auto& its = (*new_buckets)[getBucketIndex(it.hash)];
                 its.push_back(it);
             }
         }
@@ -63,31 +73,22 @@ public:
     T& operator[](K indexer){
         size_t index = H{}(indexer);
         bucket& buck = (*buckets)[getBucketIndex(index)];
-        for (item& it : buck.items) {
+        for (item& it : buck) {
             if (it.hash == index) {
                 return it.value;
             }
         }
         
-        if (buck.items.size() < bucketSize || 
-            (usedBucketCount * inverseBucketCount) < minimumFillBeforeRebalance ) {
-            ++itemCount;
-            if (buck.items.size() == 0){
-                ++usedBucketCount;
+        while(1) {
+            bucket& newbucket = (*buckets)[getBucketIndex(index)];
+            if (newbucket.size() < bucketSize) {
+                ++itemCount;
+                newbucket.push_back(item{index, T()});
+                return newbucket.back().value;
+            } else {
+                rebalance();
             }
-            buck.items.push_back(item{index, T()});
-            return buck.items.back().value;
         }
-
-        rebalance();
-
-        bucket& newbucket = (*buckets)[getBucketIndex(index)];
-        ++itemCount;
-        if (newbucket.items.size() == 0){
-            ++usedBucketCount;
-        }
-        newbucket.items.push_back(item{index, T()});
-        return newbucket.items.back().value;
     }
 
     size_t bucket_count() {
