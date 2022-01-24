@@ -32,4 +32,4 @@ Total std::unordered_map time: 1.056149
 Total HashTable time: 0.538371, fraction of std: 0.509749
 Total HashTable(mhash) time: 0.481824, fraction of std: 0.456208
 ```
-So this simple implementation of a HashTable is around twice as fast as std::unordered_map
+So this simple implementation of a HashTable is around twice as fast as std::unordered_map on gcc, doesn't beat the msvc implementation though
